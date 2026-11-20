@@ -55,3 +55,49 @@
 .project-quick-card{text-align:left;color:#f3f4f8}
 @media(max-width:850px){.detail-grid{grid-template-columns:1fr}.detail-side{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.detail-heading{align-items:flex-start;flex-direction:column}.detail-side{grid-template-columns:1fr}.detail-meta>span{font-size:8px}.add-task-form{flex-wrap:wrap}.add-task-form input{flex-basis:100%;min-height:38px}.add-task-form button{min-height:35px}.project-row-button .project-updated{display:block}}
+
+
+/* Local specialist-agent planning console */
+.agent-console{min-height:500px;padding-top:12px}
+.agent-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:5px 0 22px}
+.agent-hero .page-title{margin:10px 0 6px}
+.agent-hero-mark{width:58px;height:58px;display:grid;place-items:center;border:1px solid #514274;border-radius:16px;color:#c2b2ff;background:linear-gradient(145deg,#29213f,#171a28)}
+.agent-boundary{display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:15px;border:1px solid #514274;border-radius:9px;background:#171526;color:#bcaaff}
+.agent-boundary>div{flex:1}
+.agent-boundary b,.agent-boundary span{display:block}
+.agent-boundary b{font-size:10px;color:#e6e0ff}
+.agent-boundary div span{font-size:9px;color:#a19bb7;line-height:1.5;margin-top:4px}
+.agent-state{font-size:8px;letter-spacing:.8px;color:#c7b8ff!important;white-space:nowrap}
+.agent-plan-panel,.agent-plan-result{margin-bottom:15px}
+.agent-goal-input{width:100%;resize:vertical;min-height:85px;margin-top:17px;padding:12px;background:#0c0e17;border:1px solid var(--line);border-radius:8px;color:#f3f4f8;font:inherit;font-size:11px;line-height:1.6;outline:none}
+.agent-goal-input:focus{border-color:#8e79d0}
+.agent-goal-input::placeholder{color:#666b7e}
+.agent-form-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}
+.agent-form-footer>span{display:flex;align-items:center;gap:7px;color:#85899b;font-size:9px}
+.agent-error{display:flex;align-items:center;gap:7px;color:#e5a8b0;font-size:10px}
+.agent-plan-count{font-size:9px;color:#c6b7ff;background:#29223e;border-radius:20px;padding:6px 9px;white-space:nowrap}
+.agent-ready-row{display:flex;align-items:center;gap:8px;padding:10px;margin-top:16px;border-radius:7px;background:#18231f;color:#a6d8bb;font-size:9px}
+.agent-task-list{display:grid;margin-top:8px}
+.agent-task{display:flex;align-items:flex-start;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
+.agent-task:last-child{border:0}
+.agent-task-number{font:700 11px Manrope;color:#a995ff;padding-top:2px}
+.agent-task>div{flex:1;min-width:0}
+.agent-task b{display:block;font-size:10px;color:#e4e2ed}
+.agent-task p{font-size:9px;color:#85899b;line-height:1.5;margin:4px 0}
+.agent-task small{font-size:8px;color:#a995ff;letter-spacing:.3px}
+.agent-task-ready,.agent-task-blocked{font-size:8px;padding:5px 7px;border-radius:20px;white-space:nowrap}
+.agent-task-ready{color:#a6d8bb;background:#1c3329}
+.agent-task-blocked{color:#a3a5b2;background:#242633}
+.agent-section-heading{margin-top:27px}
+.agent-specialist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}
+.agent-specialist{display:flex;gap:10px;align-items:flex-start;padding:14px;background:#11141e;border:1px solid var(--line);border-radius:9px}
+.agent-specialist-icon{width:30px;height:30px;display:grid;place-items:center;flex:none;border-radius:8px;background:#29223e;color:#b9a8ff}
+.agent-specialist b{display:block;font-size:9px;color:#e4e2ed}
+.agent-specialist p{font-size:8px;line-height:1.5;color:#85899b;margin:5px 0}
+.agent-specialist span{display:flex;align-items:center;gap:5px;font-size:8px;color:#d1ae79}
+.agent-guardrails{margin-bottom:18px}
+.agent-gates{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:15px}
+.agent-gates span{display:flex;align-items:center;gap:8px;color:#a7adba;font-size:9px}
+.agent-gates svg{color:#a995ff;flex:none}
+@media(max-width:760px){.agent-specialist-grid{grid-template-columns:repeat(2,1fr)}.agent-boundary{align-items:flex-start;flex-wrap:wrap}.agent-state{margin-left:29px}.agent-form-footer{align-items:flex-start;flex-direction:column}.agent-form-footer .create-button{align-self:flex-end}}
+@media(max-width:480px){.agent-specialist-grid,.agent-gates{grid-template-columns:1fr}.agent-task{gap:8px}.agent-task p{max-width:220px}}
