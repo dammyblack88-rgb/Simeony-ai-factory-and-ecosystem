@@ -6,7 +6,7 @@ import {
   type ApprovalDecision,
   type WorkPlan,
   type WorkTask,
-} from "./orchestration";
+} from "./orchestration.ts";
 import type { AgentExecutionResult, AgentProvider } from "./provider";
 
 const MAX_CONTEXT_ITEMS = 20;
@@ -39,12 +39,14 @@ export async function runReadyTask(options: RunTaskOptions): Promise<AgentExecut
 
   const plannedTask = plan.tasks.find(item => item.id === task.id);
   if (!plannedTask) return blocked(task.id, "Task does not belong to the supplied work plan.");
-  if (task.status !== "ready") return blocked(task.id, "Only a ready task can be executed.");
-  if (!task.dependsOn.every(id => options.completedTaskIds.includes(id))) {
+  if (plannedTask.status !== "ready" || task.status !== "ready") {
+    return blocked(task.id, "Only a ready task in the supplied work plan can be executed.");
+  }
+  if (!plannedTask.dependsOn.every(id => options.completedTaskIds.includes(id))) {
     return blocked(task.id, "One or more prerequisite tasks are not completed.");
   }
 
-  const agent = selectAgent(task, agents);
+  const agent = selectAgent(plannedTask, agents);
   if (!agent) return blocked(task.id, "No enabled specialist with a configured provider matches this role.");
 
   const provider = providers.find(item => item.id === agent.providerId);
@@ -52,7 +54,7 @@ export async function runReadyTask(options: RunTaskOptions): Promise<AgentExecut
     return blocked(task.id, "The selected provider is unavailable or lacks text-generation capability.");
   }
 
-  for (const kind of task.approvalRequired ?? []) {
+  for (const kind of plannedTask.approvalRequired ?? []) {
     const authorization = authorizeOperation(kind, options.approvals ?? []);
     if (!authorization.allowed) return blocked(task.id, authorization.reason);
   }
@@ -77,7 +79,7 @@ export async function runReadyTask(options: RunTaskOptions): Promise<AgentExecut
       agentId: agent.id,
       role: agent.role,
       goal: plan.goal,
-      task,
+      task: plannedTask,
       context: [...context],
       maxOutputCharacters,
     }, options.signal);
