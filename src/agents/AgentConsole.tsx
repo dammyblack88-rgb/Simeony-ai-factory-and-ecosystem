@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CircleDot, ClipboardList, LockKeyhole, PlayCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CircleDot, ClipboardList, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { createStarterWorkPlan, getReadyTasks } from "./orchestration";
 
 const specialists = [
