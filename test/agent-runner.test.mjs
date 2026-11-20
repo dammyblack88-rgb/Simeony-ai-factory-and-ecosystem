@@ -29,8 +29,10 @@ test("blocks tasks without a configured specialist or provider", async () => {
 
 test("blocks tasks whose prerequisites are incomplete", async () => {
   const options = setup();
-  options.task.dependsOn = ["required-first"];
-  const result = await runReadyTask({ ...options, completedTaskIds: [] });
+  const dependentTask = options.plan.tasks[1];
+  dependentTask.status = "ready";
+  const agents = [{ id: "researcher-1", role: "researcher", label: "Researcher", enabled: true, providerId: "mock" }];
+  const result = await runReadyTask({ ...options, task: dependentTask, agents, completedTaskIds: [] });
   assert.equal(result.status, "blocked");
   assert.match(result.reason, /prerequisite/);
 });
