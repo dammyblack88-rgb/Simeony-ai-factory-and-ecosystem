@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import {
-  Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, Bot, Box,
-  Check, ChevronDown, CircleHelp, Clock3, Code2, Command, Compass,
-  Cpu, Database, FileCode2, FolderKanban, Gamepad2, Globe2, Layers3,
-  LayoutDashboard, Menu, MessageSquare, MoreHorizontal, Plus, Search,
-  Settings2, ShieldCheck, Sparkles, WandSparkles, Workflow, X, Zap,
+  Activity, ArrowRight, ArrowUpRight, AudioLines, Bot, Box,
+  Check, ChevronDown, CircleHelp, Clock3, Code2, Command,
+  Cpu, FolderKanban, Gamepad2, Globe2, Layers3, LayoutDashboard,
+  Menu, MoreHorizontal, Plus, Search, Settings2, ShieldCheck,
+  Sparkles, WandSparkles, Workflow, X,
 } from "lucide-react";
 
 type Mode = "Simple" | "Studio" | "Expert";
