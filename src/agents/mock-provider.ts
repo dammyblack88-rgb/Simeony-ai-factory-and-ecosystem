@@ -1,10 +1,10 @@
-import type { AgentProvider } from "./provider";
+import type { AgentCompletionRequest, AgentProvider } from "./provider";
 
 export const mockAgentProvider: AgentProvider = Object.freeze({
   id: "mock",
   label: "Offline mock provider",
   capabilities: Object.freeze(["text_generation"] as const),
-  async complete(request, signal) {
+  async complete(request: AgentCompletionRequest, signal?: AbortSignal) {
     if (signal?.aborted) {
       throw new DOMException("The operation was aborted", "AbortError");
     }
