@@ -35,6 +35,15 @@ test("blocks tasks whose prerequisites are incomplete", async () => {
   assert.match(result.reason, /prerequisite/);
 });
 
+test("does not trust a caller-modified task status over the stored plan", async () => {
+  const options = setup();
+  const blockedTask = options.plan.tasks[1];
+  const forgedTask = { ...blockedTask, status: "ready" };
+  const result = await runReadyTask({ ...options, task: forgedTask, completedTaskIds: [options.plan.tasks[0].id] });
+  assert.equal(result.status, "blocked");
+  assert.match(result.reason, /ready task in the supplied work plan/);
+});
+
 test("requires named approval for consequential task operations", async () => {
   const options = setup();
   options.task.approvalRequired = ["external_network"];
