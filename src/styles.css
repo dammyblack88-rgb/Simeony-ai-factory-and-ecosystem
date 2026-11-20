@@ -4,3 +4,54 @@
 @media(max-width:1100px){.content{padding:36px 30px 22px}.quick-grid{grid-template-columns:repeat(2,1fr)}.mode-hint{width:100%;margin-left:0}.orb-wrap{margin-right:10px}}
 @media(max-width:760px){.sidebar{transform:translateX(-100%);transition:transform .22s}.sidebar.sidebar-open{transform:translateX(0)}.mobile-scrim{display:block;position:fixed;inset:0;background:#0009;border:0;z-index:4}.mobile-menu-button,.mobile-close{display:grid}.mobile-close{margin-left:auto}.main-area{margin-left:0}.topbar{padding:0 16px;height:59px}.content{padding:29px 17px 20px}.welcome-row{display:block}.date-chip{display:inline-flex;margin-top:16px}.welcome-row h1{font-size:30px}.builder-card{padding:19px 15px 15px}.orb-wrap{transform:scale(.75);transform-origin:right center;margin-right:0;width:82px}.builder-top h2{font-size:20px}.prompt-footer{align-items:flex-start;gap:10px}.prompt-footer>span{max-width:135px;line-height:1.5}.mode-row{gap:6px}.mode-label{width:100%}.quick-grid{gap:8px}.quick-card{padding:12px;min-height:130px}.section-heading{align-items:flex-start;gap:10px}.text-link{white-space:nowrap}.engine-grid{grid-template-columns:repeat(2,1fr)}.project-row{gap:9px;padding:12px}.project-status{display:none}.project-updated{width:auto}.bottom-strip{align-items:flex-start}.foundation-tag{display:none!important}footer{gap:15px;line-height:1.5}footer span:last-child{text-align:right}.system-status{font-size:0}.system-status span{width:7px;height:7px}}
 @media(max-width:420px){.quick-grid,.engine-grid{grid-template-columns:1fr 1fr}.quick-card>span{font-size:8px}.orb-wrap{display:none}.builder-top{min-height:75px}.mode-chip{font-size:8px;padding:6px}.create-button{padding:9px}.project-updated{display:none}}
+
+/* Project workspace milestone */
+.back-link{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:#aaa0d5;padding:0;margin:0 0 23px;font-size:11px}
+.detail-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}
+.detail-title{font:700 clamp(25px,3vw,34px) Manrope;letter-spacing:-1px;margin:10px 0 7px}
+.detail-heading p{color:#85899b;font-size:11px;margin:0;max-width:650px;line-height:1.6}
+.danger-button{display:flex;align-items:center;gap:7px;background:#24191f;border:1px solid #57313b;color:#e6a8b0;border-radius:7px;padding:9px 11px;font-size:10px;white-space:nowrap}
+.detail-meta{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px}
+.detail-meta>span{display:flex;align-items:center;gap:6px;padding:7px 9px;background:#141722;border:1px solid var(--line);border-radius:7px;color:#a5a8b7;font-size:9px}
+.detail-meta .status-pill{color:#b9aaff;background:#28213d;border-color:#514274}
+.detail-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(230px,.85fr);gap:14px;align-items:start}
+.detail-main,.detail-side{display:grid;gap:14px}
+.workspace-panel{background:#11141e;border:1px solid var(--line);border-radius:11px;padding:18px}
+.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;color:#a995ff}
+.panel-heading h3{font:700 13px Manrope;color:#f3f4f8;margin:0 0 5px}
+.panel-heading p{font-size:10px;color:#85899b;margin:0;line-height:1.5}
+.progress-number{font:700 20px Manrope;color:#c4b5ff}
+.progress-track{height:7px;background:#272536;border-radius:20px;overflow:hidden;margin-top:19px}
+.progress-track span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#7556d7,#b09bff);transition:width .2s}
+.progress-caption{font-size:9px;color:#85899b;margin-top:8px}
+.task-list{display:grid;margin-top:15px}
+.task-item{display:flex;align-items:center;gap:10px;padding:12px 2px;border-top:1px solid var(--line);font-size:11px;color:#d7d8e1;cursor:pointer}
+.task-item input{position:absolute;opacity:0;pointer-events:none}
+.task-check{color:#777b8d;display:grid}
+.task-item input:checked+.task-check{color:#8fd0a9}
+.task-done>span:last-child{color:#777d8e;text-decoration:line-through}
+.add-task-form{display:flex;gap:8px;margin-top:12px}
+.add-task-form input,.project-toolbar input{min-width:0;flex:1;background:#0c0e17;border:1px solid var(--line);border-radius:7px;padding:10px 11px;color:#f3f4f8;font:inherit;font-size:10px;outline:none}
+.add-task-form input:focus,.project-toolbar input:focus{border-color:#7764b8}
+.add-task-form button{display:flex;align-items:center;gap:5px;background:#29223e;border:1px solid #514274;border-radius:7px;color:#c8baff;padding:0 11px;font-size:10px}
+.add-task-form button:disabled{opacity:.45;cursor:not-allowed}
+.activity-list{display:grid;margin-top:15px}
+.activity-item{display:flex;gap:10px;padding:0 0 15px}
+.activity-dot{width:7px;height:7px;border-radius:50%;background:#9d87ef;margin-top:4px;flex:none;box-shadow:0 0 8px #9d87ef55}
+.activity-item b,.activity-item small{display:block}
+.activity-item b{font-size:10px;color:#d6d6e0;font-weight:500;line-height:1.5}
+.activity-item small{font-size:9px;color:#74798a;margin-top:4px}
+.boundary-panel{color:#a995ff}
+.boundary-panel b{display:block;color:#e4e2ed;font-size:11px;margin-top:10px}
+.boundary-panel p{font-size:10px;line-height:1.6;color:#85899b;margin:6px 0 0}
+.project-toolbar{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.project-toolbar span{font-size:9px;color:#85899b}
+.project-row-button{width:100%;text-align:left;color:inherit;border:0;cursor:pointer}
+.project-row-button:hover{background:#191d2a}
+.project-row-button>svg{color:#85899b}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:140px;padding:22px;color:#9f91d8;background:#11141e;border:1px dashed #373149;border-radius:10px;text-align:center}
+.empty-state b{font-size:11px;color:#e3e0ee}
+.empty-state span{font-size:10px;color:#85899b;max-width:280px;line-height:1.5}
+.project-quick-card{text-align:left;color:#f3f4f8}
+@media(max-width:850px){.detail-grid{grid-template-columns:1fr}.detail-side{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.detail-heading{align-items:flex-start;flex-direction:column}.detail-side{grid-template-columns:1fr}.detail-meta>span{font-size:8px}.add-task-form{flex-wrap:wrap}.add-task-form input{flex-basis:100%;min-height:38px}.add-task-form button{min-height:35px}.project-row-button .project-updated{display:block}}
