@@ -36,4 +36,4 @@ The current interface is a foundation, not yet an AI coding agent. Project ideas
 
 No paid API, cloud service or deployment is enabled by this starter.
 
-See `SIMEONY_MASTER_BUILD_PROMPT.md` for the governing product vision and engineering principles.
+See [the master development prompt](./docs/SIMEONY_MASTER_BUILD_PROMPT.md) for the governing product vision and engineering principles.
