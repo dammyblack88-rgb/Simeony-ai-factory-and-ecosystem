@@ -30,6 +30,35 @@ Production build:
 npm run build
 ```
 
+Automated tests:
+
+```bash
+npm test
+```
+
+## Browser data recovery limits
+
+The current browser-only workspace validates and caps stored data to keep malformed or outdated
+records from breaking the Studio:
+
+- 500 projects
+- 500 tasks per project
+- 500-character project descriptions
+- 500-character activity messages
+- 100 activity entries per project
+- 180-character task titles
+- 58-character displayed project names
+- 128-character stored project and task IDs
+
+Malformed workspace data is kept in place until the user explicitly chooses recovery. Recovered
+projects are shown as in-memory data until SIMEONY verifies that the browser write succeeded.
+
+TypeScript typecheck:
+
+```bash
+npm run typecheck
+```
+
 ## Important status
 
 The current interface is a foundation, not yet an AI coding agent. Project ideas are currently held in browser memory only. Authentication, persistent database storage, model integrations, agent orchestration, isolated execution, testing pipelines and deployment are future milestones.
