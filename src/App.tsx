@@ -17,6 +17,17 @@ type Project = {
 };
 
 const STORAGE_KEY = "simeony.workspace.v1";
+const RECOVERY_BACKUP_KEY = "simeony.workspace.recovery-backup.v1";
+const MAX_PROJECT_PROMPT_LENGTH = 500;
+const MAX_TASK_TITLE_LENGTH = 180;
+const MAX_PROJECT_NAME_LENGTH = 58;
+const MAX_PROJECT_DESCRIPTION_LENGTH = 500;
+const MAX_ACTIVITY_TEXT_LENGTH = 500;
+const MAX_PROJECTS = 500;
+const MAX_TASKS_PER_PROJECT = 500;
+const MAX_ACTIVITY_ITEMS = 100;
+const MAX_STORED_PROJECT_ID_LENGTH = 128;
+const MAX_STORED_TASK_ID_LENGTH = 128;
 const starterTasks = [
   "Define the product goal and target users",
   "Confirm core features and user journeys",
@@ -25,15 +36,187 @@ const starterTasks = [
   "Test the main user workflows"
 ];
 
-function loadProjects(): Project[] {
+type WorkspaceLoadResult = {
+  projects: Project[];
+  needsRecovery: boolean;
+  recoveryMessage: string;
+  originalStoredData: string | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validMode(value: unknown): Mode {
+  return value === "Studio" || value === "Expert" ? value : "Simple";
+}
+
+function validIcon(value: unknown): Project["icon"] {
+  return value === "mobile" || value === "game" || value === "ai" ? value : "web";
+}
+
+function normalizeStoredProject(value: unknown): { project: Project | null; recovered: boolean } {
+  if (!isRecord(value)) return { project: null, recovered: true };
+
+  const name = typeof value.name === "string" ? value.name.trim() : "";
+  if (!name || typeof value.id !== "string" || !value.id ||
+      value.id.length > MAX_STORED_PROJECT_ID_LENGTH ||
+      /[\u0000-\u001F]/.test(value.id)) {
+    return { project: null, recovered: true };
+  }
+
+  let recovered = false;
+  const description = typeof value.description === "string"
+    ? value.description.slice(0, MAX_PROJECT_DESCRIPTION_LENGTH)
+    : name;
+  if (typeof value.description !== "string" || value.description.length > MAX_PROJECT_DESCRIPTION_LENGTH) recovered = true;
+  const kind = typeof value.kind === "string" ? value.kind : "New digital product";
+  const status = typeof value.status === "string" ? value.status : "Planning";
+  const updated = typeof value.updated === "string" ? value.updated : "Recently";
+  const createdAt = typeof value.createdAt === "string" ? value.createdAt : stamp();
+  const mode = validMode(value.mode);
+  const icon = validIcon(value.icon);
+
+  if (name.length > MAX_PROJECT_NAME_LENGTH) recovered = true;
+  if (description !== value.description) recovered = true;
+  if (kind !== value.kind) recovered = true;
+  if (status !== value.status) recovered = true;
+  if (mode !== value.mode) recovered = true;
+  if (icon !== value.icon) recovered = true;
+
+  const tasks: Task[] = [];
+  const taskIds = new Set<string>();
+  if (Array.isArray(value.tasks)) {
+    if (value.tasks.length > MAX_TASKS_PER_PROJECT) recovered = true;
+    value.tasks.forEach((task, index) => {
+      if (!isRecord(task) || typeof task.title !== "string" || !task.title.trim()) {
+        recovered = true;
+        return;
+      }
+      if (index >= MAX_TASKS_PER_PROJECT) {
+        recovered = true;
+        return;
+      }
+      const title = task.title.trim().slice(0, MAX_TASK_TITLE_LENGTH);
+      if (title !== task.title) recovered = true;
+      let taskId = typeof task.id === "string" && task.id &&
+        task.id.length <= MAX_STORED_TASK_ID_LENGTH &&
+        !/[\u0000-\u001F]/.test(task.id)
+        ? task.id
+        : `${value.id}-recovered-task-${index}`;
+      if (typeof task.id !== "string" || task.id !== taskId || taskIds.has(taskId)) {
+        recovered = true;
+        let suffix = 1;
+        while (taskIds.has(taskId) || taskId === task.id) {
+          taskId = `${value.id}-recovered-task-${index}-${suffix}`;
+          suffix += 1;
+        }
+      }
+      taskIds.add(taskId);
+      tasks.push({
+        id: taskId,
+        title,
+        done: task.done === true,
+      });
+    });
+  } else {
+    recovered = true;
+  }
+
+  const activity: ActivityItem[] = [];
+  if (Array.isArray(value.activity)) {
+    if (value.activity.length > MAX_ACTIVITY_ITEMS) recovered = true;
+    value.activity.forEach((item) => {
+      if (activity.length >= MAX_ACTIVITY_ITEMS) return;
+      if (!isRecord(item) || typeof item.message !== "string" || !item.message.trim()) {
+        recovered = true;
+        return;
+      }
+      const message = item.message.trim().slice(0, MAX_ACTIVITY_TEXT_LENGTH);
+      if (message !== item.message.trim()) recovered = true;
+      activity.push({
+        id: typeof item.id === "string" && item.id ? item.id : `${value.id}-recovered-activity-${activity.length}`,
+        message,
+        at: typeof item.at === "string" ? item.at : stamp(),
+      });
+    });
+  } else {
+    recovered = true;
+  }
+
+  return {
+    project: {
+      id: value.id,
+      name: name.length > MAX_PROJECT_NAME_LENGTH ? name.slice(0, MAX_PROJECT_NAME_LENGTH).trim() + "…" : name,
+      description,
+      kind,
+      status,
+      updated,
+      createdAt,
+      mode,
+      icon,
+      tasks,
+      activity,
+    },
+    recovered,
+  };
+}
+
+function loadWorkspace(): WorkspaceLoadResult {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+    if (!saved) return { projects: [], needsRecovery: false, recoveryMessage: "", originalStoredData: null };
+
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) {
+      return {
+        projects: [],
+        needsRecovery: true,
+        recoveryMessage: "Saved workspace data has an unsupported format. The original browser data was preserved and was not overwritten.",
+        originalStoredData: saved,
+      };
     }
-  } catch { /* Recover with an empty workspace if stored data is unreadable. */ }
-  return [];
+
+    let needsRecovery = false;
+    const projects: Project[] = [];
+    const projectIds = new Set<string>();
+    if (parsed.length > MAX_PROJECTS) needsRecovery = true;
+    for (const [index, value] of parsed.entries()) {
+      if (index >= MAX_PROJECTS) {
+        needsRecovery = true;
+        break;
+      }
+      const normalized = normalizeStoredProject(value);
+      needsRecovery ||= normalized.recovered;
+      if (normalized.project) {
+        if (projectIds.has(normalized.project.id)) {
+          needsRecovery = true;
+        } else {
+          projectIds.add(normalized.project.id);
+          projects.push(normalized.project);
+        }
+      } else needsRecovery = true;
+    }
+
+    if (needsRecovery) {
+      return {
+        projects,
+        needsRecovery: true,
+        recoveryMessage: "Some saved workspace records were malformed or outdated. Valid projects were recovered, and the original browser data was preserved.",
+        originalStoredData: saved,
+      };
+    }
+    return { projects, needsRecovery: false, recoveryMessage: "", originalStoredData: null };
+  } catch {
+    let originalStoredData: string | null = null;
+    try { originalStoredData = localStorage.getItem(STORAGE_KEY); } catch { /* Keep it unavailable without replacing it. */ }
+    return {
+      projects: [],
+      needsRecovery: true,
+      recoveryMessage: "Saved workspace data could not be read. The original browser data was preserved and was not overwritten.",
+      originalStoredData,
+    };
+  }
 }
 function stamp() { return new Date().toISOString(); }
 function timeLabel(value: string) {
@@ -60,20 +243,29 @@ function classify(idea: string): { kind: string; icon: Project["icon"] } {
 }
 
 export default function App() {
+  const [initialWorkspace] = useState(loadWorkspace);
   const [mode, setMode] = useState<Mode>("Simple");
   const [prompt, setPrompt] = useState("");
-  const [projects, setProjects] = useState<Project[]>(loadProjects);
+  const [projects, setProjects] = useState<Project[]>(initialWorkspace.projects);
   const [activeNav, setActiveNav] = useState("Overview");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(initialWorkspace.recoveryMessage);
+  const [storageNeedsRecovery, setStorageNeedsRecovery] = useState(initialWorkspace.needsRecovery);
+  const [originalStoredData] = useState(initialWorkspace.originalStoredData);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [taskDraft, setTaskDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
-    catch { setNotice("Browser storage is full or unavailable. Export or remove older workspace data."); }
-  }, [projects]);
+    if (storageNeedsRecovery) return;
+    const serialized = JSON.stringify(projects);
+    try {
+      localStorage.setItem(STORAGE_KEY, serialized);
+      if (localStorage.getItem(STORAGE_KEY) !== serialized) {
+        setNotice("Workspace changes could not be verified as saved. They remain available in memory only.");
+      }
+    } catch { setNotice("Browser storage is full or unavailable. Workspace changes remain available in memory only."); }
+  }, [projects, storageNeedsRecovery]);
 
   const selectedProject = projects.find((project) => project.id === selectedId) ?? null;
   const greeting = useMemo(() => {
@@ -83,21 +275,69 @@ export default function App() {
   const completedCount = (project: Project) => project.tasks.filter((task) => task.done).length;
   const progress = (project: Project) => project.tasks.length ? Math.round(completedCount(project) / project.tasks.length * 100) : 0;
 
+  function confirmRecoveredProjects() {
+    if (!window.confirm("Replace the damaged workspace value only after preserving an exact backup and saving the recovered projects?")) return;
+    if (originalStoredData !== null) {
+      try {
+        localStorage.setItem(RECOVERY_BACKUP_KEY, originalStoredData);
+        if (localStorage.getItem(RECOVERY_BACKUP_KEY) !== originalStoredData) {
+          setNotice("Recovery backup could not be verified. The original browser data was not changed.");
+          return;
+        }
+      } catch {
+        setNotice("Recovery could not preserve the original browser data because storage is unavailable. No recovery write was made.");
+        return;
+      }
+    }
+
+    const serialized = JSON.stringify(projects);
+    try {
+      localStorage.setItem(STORAGE_KEY, serialized);
+      if (localStorage.getItem(STORAGE_KEY) !== serialized) {
+        if (originalStoredData !== null) {
+          try {
+            localStorage.setItem(STORAGE_KEY, originalStoredData);
+            if (localStorage.getItem(STORAGE_KEY) === originalStoredData) {
+              setNotice("Recovered projects could not be verified as saved. The original browser data was restored unchanged.");
+            } else {
+              setNotice("Recovered projects could not be verified as saved, and the original browser data restoration could not be verified.");
+            }
+          } catch {
+            setNotice("Recovered projects could not be verified as saved, and the original browser data could not be restored.");
+          }
+        } else {
+          setNotice("Recovered projects could not be verified as saved. The original browser data remains unavailable.");
+        }
+        return;
+      }
+      setStorageNeedsRecovery(false);
+      setNotice("Recovery completed. The validated recovered projects are saved in this browser.");
+    } catch {
+      setNotice("Recovered projects could not be saved because browser storage is unavailable. They remain available in memory only.");
+    }
+  }
+
   function createProject() {
     const idea = prompt.trim();
     if (!idea) { setNotice("Describe what you want to create first."); return; }
+    if (idea.length > MAX_PROJECT_PROMPT_LENGTH) {
+      setNotice(`Keep the project description to ${MAX_PROJECT_PROMPT_LENGTH} characters or fewer.`);
+      return;
+    }
     const id = globalThis.crypto?.randomUUID?.() ?? String(Date.now());
     const now = stamp();
     const category = classify(idea);
     const project: Project = {
-      id, name: idea.length > 58 ? idea.slice(0, 58).trim() + "…" : idea,
+      id, name: idea.length > MAX_PROJECT_NAME_LENGTH ? idea.slice(0, MAX_PROJECT_NAME_LENGTH).trim() + "…" : idea,
       description: idea, kind: category.kind, status: "Planning", updated: "Just now",
       createdAt: now, mode, icon: category.icon, tasks: makePlan(id),
       activity: [{ id: id + "-activity-1", message: "Project workspace created", at: now }]
     };
     setProjects((current) => [project, ...current]);
     setPrompt(""); setSelectedId(id); setActiveNav("Projects");
-    setNotice("Project created and saved in this browser. Its starter checklist is ready to edit.");
+    setNotice(storageNeedsRecovery
+      ? "Project created in memory only. Confirm recovery to save the recovered workspace."
+      : "Project created. Browser persistence will be verified.");
   }
   function updateProject(id: string, updater: (project: Project) => Project, message?: string) {
     setProjects((current) => current.map((project) => {
@@ -120,6 +360,10 @@ export default function App() {
   function addTask() {
     if (!selectedProject || !taskDraft.trim()) return;
     const title = taskDraft.trim();
+    if (title.length > MAX_TASK_TITLE_LENGTH) {
+      setNotice(`Keep task titles to ${MAX_TASK_TITLE_LENGTH} characters or fewer.`);
+      return;
+    }
     updateProject(selectedProject.id, (current) => ({
       ...current, tasks: [...current.tasks, { id: globalThis.crypto?.randomUUID?.() ?? String(Date.now()), title, done: false }]
     }), "Added task: " + title);
@@ -128,7 +372,10 @@ export default function App() {
   function deleteProject(project: Project) {
     if (!window.confirm("Delete this project and its workspace history? This cannot be undone.")) return;
     setProjects((current) => current.filter((item) => item.id !== project.id));
-    setSelectedId(null); setActiveNav("Projects"); setNotice("Project deleted from this browser.");
+    setSelectedId(null); setActiveNav("Projects");
+    setNotice(storageNeedsRecovery
+      ? "Project removed from memory only. Confirm recovery before saving the recovered workspace."
+      : "Project deleted. Browser persistence will be verified.");
   }
   function openProject(id: string) { setSelectedId(id); setActiveNav("Projects"); setMobileMenu(false); }
 
@@ -169,7 +416,7 @@ export default function App() {
               <div className="detail-grid">
                 <div className="detail-main">
                   <article className="workspace-panel"><div className="panel-heading"><div><h3>Project progress</h3><p>Track the work needed to bring this idea to life.</p></div><b className="progress-number">{progress(selectedProject)}%</b></div><div className="progress-track"><span style={{ width: progress(selectedProject) + "%" }} /></div><div className="progress-caption">{completedCount(selectedProject)} of {selectedProject.tasks.length} tasks completed</div></article>
-                  <article className="workspace-panel"><div className="panel-heading"><div><h3>Build checklist</h3><p>A starter plan you can edit as the project becomes clearer.</p></div><ListTodo size={18} /></div><div className="task-list">{selectedProject.tasks.map((task) => <label className={`task-item ${task.done ? "task-done" : ""}`} key={task.id}><input type="checkbox" checked={task.done} onChange={() => toggleTask(selectedProject, task.id)} /><span className="task-check">{task.done ? <CircleCheck size={18} /> : <Circle size={18} />}</span><span>{task.title}</span></label>)}</div><form className="add-task-form" onSubmit={(event) => { event.preventDefault(); addTask(); }}><input value={taskDraft} onChange={(event) => setTaskDraft(event.target.value)} placeholder="Add a project task…" aria-label="New task" /><button type="submit" disabled={!taskDraft.trim()}><Plus size={15} /> Add task</button></form></article>
+                  <article className="workspace-panel"><div className="panel-heading"><div><h3>Build checklist</h3><p>A starter plan you can edit as the project becomes clearer.</p></div><ListTodo size={18} /></div><div className="task-list">{selectedProject.tasks.map((task) => <label className={`task-item ${task.done ? "task-done" : ""}`} key={task.id}><input type="checkbox" checked={task.done} onChange={() => toggleTask(selectedProject, task.id)} /><span className="task-check">{task.done ? <CircleCheck size={18} /> : <Circle size={18} />}</span><span>{task.title}</span></label>)}</div><form className="add-task-form" onSubmit={(event) => { event.preventDefault(); addTask(); }}>                  <input value={taskDraft} maxLength={MAX_TASK_TITLE_LENGTH} onChange={(event) => setTaskDraft(event.target.value)} placeholder="Add a project task…" aria-label="New task" /><button type="submit" disabled={!taskDraft.trim()}><Plus size={15} /> Add task</button></form></article>
                 </div>
                 <aside className="detail-side"><article className="workspace-panel"><div className="panel-heading"><div><h3>Activity history</h3><p>Recent changes in this workspace.</p></div><Activity size={17} /></div><div className="activity-list">{selectedProject.activity.map((item) => <div className="activity-item" key={item.id}><span className="activity-dot" /><div><b>{item.message}</b><small>{timeLabel(item.at)}</small></div></div>)}</div></article><article className="workspace-panel boundary-panel"><ShieldCheck size={18} /><b>Workspace boundary</b><p>Project data is saved in this browser only. Cloud sync, AI execution, team access and deployment are not connected yet.</p></article></aside>
               </div>
@@ -177,16 +424,16 @@ export default function App() {
           ) : activeNav === "Overview" || activeNav === "AI workspace" ? (
             <>
               <section className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line" /> YOUR CREATIVE COMMAND CENTRE</div><h1>{greeting}, <span>Creator.</span></h1><p>Big ideas deserve the tools to make them real. What are we building today?</p></div><div className="date-chip"><Clock3 size={14} /> Your workspace · Private</div></section>
-              <section className="builder-card"><div className="builder-top"><div><div className="builder-kicker"><WandSparkles size={15} /> THE SIMEONY CREATION ENGINE</div><h2>Start with an idea.</h2><p>Describe what you imagine. SIMEONY will create a project workspace and starter checklist.</p></div><div className="orb-wrap"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb-core"><Sparkles size={25} /></div></div></div><div className="prompt-box"><textarea value={prompt} onChange={(event) => { setPrompt(event.target.value); setNotice(""); }} placeholder="I want to build a modern e-commerce platform with customer accounts, product management and online payments…" rows={3} /><div className="prompt-footer"><span><Command size={13} /> Your idea becomes a saved project workspace</span><button className="create-button" onClick={createProject}><Sparkles size={15} /> Create project <ArrowRight size={15} /></button></div></div><div className="mode-row"><span className="mode-label">CREATION MODE</span>{(["Simple", "Studio", "Expert"] as Mode[]).map((item) => <button key={item} className={`mode-chip ${mode === item ? "selected" : ""}`} onClick={() => setMode(item)}>{item === "Simple" ? <Sparkles size={13} /> : item === "Studio" ? <Code2 size={13} /> : <Cpu size={13} />}{item}{item === "Simple" && <span className="recommended">START HERE</span>}</button>)}<span className="mode-hint">{mode === "Simple" ? "Guided creation, step by step" : mode === "Studio" ? "Professional project planning" : "Advanced project planning"}</span></div></section>
+              <section className="builder-card"><div className="builder-top"><div><div className="builder-kicker"><WandSparkles size={15} /> THE SIMEONY CREATION ENGINE</div><h2>Start with an idea.</h2><p>Describe what you imagine. SIMEONY will create a project workspace and starter checklist.</p></div><div className="orb-wrap"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb-core"><Sparkles size={25} /></div></div></div><div className="prompt-box"><textarea value={prompt} maxLength={MAX_PROJECT_PROMPT_LENGTH} onChange={(event) => { setPrompt(event.target.value); setNotice(""); }} placeholder="I want to build a modern e-commerce platform with customer accounts, product management and online payments…" rows={3} /><div className="prompt-footer"><span><Command size={13} /> {prompt.length}/{MAX_PROJECT_PROMPT_LENGTH} characters · Your idea becomes a saved project workspace</span><button className="create-button" onClick={createProject}><Sparkles size={15} /> Create project <ArrowRight size={15} /></button></div></div><div className="mode-row"><span className="mode-label">CREATION MODE</span>{(["Simple", "Studio", "Expert"] as Mode[]).map((item) => <button key={item} className={`mode-chip ${mode === item ? "selected" : ""}`} onClick={() => setMode(item)}>{item === "Simple" ? <Sparkles size={13} /> : item === "Studio" ? <Code2 size={13} /> : <Cpu size={13} />}{item}{item === "Simple" && <span className="recommended">START HERE</span>}</button>)}<span className="mode-hint">{mode === "Simple" ? "Guided creation, step by step" : mode === "Studio" ? "Professional project planning" : "Advanced project planning"}</span></div></section>
               <section className="quick-section"><div className="section-heading"><div><h3>Your work at a glance</h3><p>Pick up where you left off.</p></div><button className="text-link" onClick={() => setActiveNav("Projects")}>View all projects <ArrowUpRight size={14} /></button></div><div className="quick-grid">{projects.slice(0,4).map((project) => <button className="quick-card project-quick-card" key={project.id} onClick={() => openProject(project.id)}><div className="quick-icon purple">{iconFor(project.icon)}</div><b>{project.name}</b><span>{project.status} · {progress(project)}% complete</span><ArrowUpRight className="quick-arrow" size={15} /></button>)}{projects.length === 0 && <div className="empty-state"><FolderKanban size={22} /><b>Your first project starts here</b><span>Create a project above to open its workspace and task checklist.</span></div>}</div></section>
             </>
           ) : activeNav === "Projects" ? (
-            <section className="projects-view"><div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> YOUR WORK</div><h2 className="page-title">Your projects</h2><p>Projects stay saved in this browser between visits.</p></div><button className="create-button" onClick={() => setActiveNav("Overview")}><Plus size={15} /> New project</button></div><div className="project-toolbar"><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Filter projects…" aria-label="Filter projects" /><span>{projects.length} total</span></div><div className="project-list">{projects.filter((project) => (project.name + " " + project.kind).toLowerCase().includes(searchTerm.toLowerCase())).map((project) => <button className="project-row project-row-button" key={project.id} onClick={() => openProject(project.id)}><div className="project-icon">{iconFor(project.icon)}</div><div className="project-info"><b>{project.name}</b><span>{project.kind} · {project.mode} mode</span></div><span className="project-status"><i />{project.status}</span><span className="project-updated">{progress(project)}%</span><ArrowRight size={16} /></button>) }{projects.length === 0 && <div className="empty-state"><FolderKanban size={24} /><b>No projects yet</b><span>Create your first project from the overview.</span></div>}</div></section>
+            <section className="projects-view"><div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> YOUR WORK</div><h2 className="page-title">Your projects</h2><p>Projects stay saved in this browser between visits.</p></div><button className="create-button" onClick={() => setActiveNav("Overview")}><Plus size={15} /> New project</button></div><div className="project-toolbar">            <input value={searchTerm} maxLength={120} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Filter projects…" aria-label="Filter projects" /><span>{projects.length} total</span></div><div className="project-list">{projects.filter((project) => (project.name + " " + project.kind).toLowerCase().includes(searchTerm.toLowerCase())).map((project) => <button className="project-row project-row-button" key={project.id} onClick={() => openProject(project.id)}><div className="project-icon">{iconFor(project.icon)}</div><div className="project-info"><b>{project.name}</b><span>{project.kind} · {project.mode} mode</span></div><span className="project-status"><i />{project.status}</span><span className="project-updated">{progress(project)}%</span><ArrowRight size={16} /></button>) }{projects.length === 0 && <div className="empty-state"><FolderKanban size={24} /><b>No projects yet</b><span>Create your first project from the overview.</span></div>}</div></section>
           ) : (
             <section className="engines-view"><div className="eyebrow"><span className="eyebrow-line" /> THE SIMEONY ECOSYSTEM</div><h2 className="page-title">Creation engines</h2><p className="view-intro">A connected toolkit for turning ambitious ideas into real products.</p><div className="engine-grid">{[{icon:<Globe2/>,name:"Web & software",desc:"Frontend, backend, APIs and databases",state:"Foundation available"},{icon:<Box/>,name:"Mobile & desktop",desc:"Cross-platform and native applications",state:"Integration planned"},{icon:<Gamepad2/>,name:"Games & 3D",desc:"Interactive worlds, engines and assets",state:"Integration planned"},{icon:<AudioLines/>,name:"Media & animation",desc:"Creative production and visual storytelling",state:"Integration planned"},{icon:<Bot/>,name:"AI & agents",desc:"Intelligent workflows and task execution",state:"Provider not connected"},{icon:<Workflow/>,name:"Automation",desc:"Connected processes and repeatable tasks",state:"Integration planned"}].map((engine) => <article className="engine-card" key={engine.name}><div className="engine-icon">{engine.icon}</div><b>{engine.name}</b><p>{engine.desc}</p><span>{engine.state}</span></article>)}</div></section>
           )}
           <section className="bottom-strip"><div className="bottom-icon"><ShieldCheck size={17} /></div><div><b>Your workspace, your rules.</b><span>No deployment, paid service or external AI provider is activated by this change.</span></div><span className="foundation-tag"><Check size={12} /> LOCAL WORKSPACE</span></section>
-          {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss"><X size={15} /></button></div>}
+          {notice && <div className="toast" role="status"><span>{notice}</span>{storageNeedsRecovery && <button onClick={confirmRecoveredProjects}>Recover and save</button>}<button onClick={() => setNotice("")} aria-label="Dismiss"><X size={15} /></button></div>}
           <footer><span>© 2026 SIMEONY · SIMEONJR STUDIOS</span><span>BUILD BEYOND IMAGINATION <Sparkles size={12} /></span></footer>
         </div>
       </main>
