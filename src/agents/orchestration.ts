@@ -62,6 +62,8 @@ const APPROVAL_KINDS: ApprovalKind[] = [
   "deployment",
   "merge",
   "destructive_change",
+  "repository_write",
+  "command_execution",
 ];
 
 function requiredText(value: unknown, field: string): string {
