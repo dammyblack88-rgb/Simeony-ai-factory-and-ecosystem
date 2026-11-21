@@ -20,7 +20,9 @@ export type ApprovalKind =
   | "paid_resource"
   | "deployment"
   | "merge"
-  | "destructive_change";
+  | "destructive_change"
+  | "repository_write"
+  | "command_execution";
 
 export interface WorkTask {
   id: string;
@@ -62,6 +64,8 @@ const APPROVAL_KINDS: ApprovalKind[] = [
   "deployment",
   "merge",
   "destructive_change",
+  "repository_write",
+  "command_execution",
 ];
 
 function requiredText(value: unknown, field: string): string {
