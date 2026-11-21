@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { authorizeWorkspaceTool } from "../src/agents/workspace-tool-policy.ts";
-const writeApproval = [{ kind: "repository_write" as const, approved: true, approvedBy: "owner" }];
+const writeApproval = [{ kind: "repository_write", approved: true, approvedBy: "owner" }];
 const commandApproval = [{ kind: "command_execution" as const, approved: true, approvedBy: "owner" }];
 test("allows a safe read-only source path", () => {
   assert.equal(authorizeWorkspaceTool({ kind: "read_file", path: "src/agents/runner.ts" }).allowed, true);
@@ -22,7 +22,7 @@ test("only permits fixed checks and requires explicit approval", () => {
   const result = authorizeWorkspaceTool({ kind: "run_check", command: "test" }, commandApproval);
   assert.equal(result.allowed, true);
   assert.equal(result.limits?.timeoutMs, 120_000);
-  assert.equal(authorizeWorkspaceTool({ kind: "run_check", command: "typecheck; rm -rf /" as never }, commandApproval).allowed, false);
+  assert.equal(authorizeWorkspaceTool({ kind: "run_check", command: "typecheck; rm -rf /" }, commandApproval).allowed, false);
 });
 test("does not accept unnamed write authorization", () => {
   const unnamed = [{ kind: "repository_write" as const, approved: true }];
