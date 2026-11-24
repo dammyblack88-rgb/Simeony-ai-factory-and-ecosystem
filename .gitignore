@@ -6,3 +6,9 @@ dist
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# Python local control plane
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+.pytest_cache/
