@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getControlPlaneSnapshot, type ControlPlaneSnapshot } from "./lib/controlPlane";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, AudioLines, Bot, Box,
   Check, ChevronDown, CircleHelp, Clock3, Code2, Command, Cpu, FolderKanban,
@@ -69,6 +70,44 @@ export default function App() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [taskDraft, setTaskDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [controlPlane, setControlPlane] = useState<ControlPlaneSnapshot>({ health: "checking", integrations: [] });
+
+  useEffect(() => {
+    let active = true;
+    let controller: AbortController | undefined;
+    const refresh = async () => {
+      controller?.abort();
+      controller = new AbortController();
+      try {
+        const snapshot = await getControlPlaneSnapshot(controller.signal);
+        if (active) setControlPlane(snapshot);
+      } catch (error) {
+        if (active && !(error instanceof DOMException && error.name === "AbortError")) {
+          setControlPlane({
+            health: "offline",
+            integrations: [],
+            error: error instanceof Error ? error.message : "Unable to reach the local control plane",
+          });
+        }
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(refresh, 15000);
+    return () => {
+      active = false;
+      controller?.abort();
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const formatBytes = (value?: number) => {
+    if (value == null || !Number.isFinite(value)) return "Not reported";
+    const units = ["B", "KB", "GB", "TB"];
+    let amount = value;
+    let unit = 0;
+    while (amount >= 1024 && unit < units.length - 1) { amount /= 1024; unit++; }
+    return `${amount.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+  };
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
@@ -159,7 +198,7 @@ export default function App() {
       </aside>
       {mobileMenu && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileMenu(false)} />}
       <main className="main-area">
-        <header className="topbar"><div className="crumb"><button className="icon-button mobile-menu-button" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={19} /></button><span>Workspace</span><span className="crumb-slash">/</span><b>{selectedProject ? selectedProject.name : activeNav}</b></div><div className="top-actions"><div className="system-status"><span /> Local workspace active</div><button className="icon-button" aria-label="Search projects" onClick={() => { setActiveNav("Projects"); setSelectedId(null); }}><Search size={18} /></button><button className="icon-button" aria-label="Activity" onClick={() => setNotice("Project activity is recorded inside each project workspace.")}><Activity size={18} /></button><div className="top-avatar">D</div></div></header>
+        <header className="topbar"><div className="crumb"><button className="icon-button mobile-menu-button" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={19} /></button><span>Workspace</span><span className="crumb-slash">/</span><b>{selectedProject ? selectedProject.name : activeNav}</b></div><div className="top-actions"><div className={`system-status ${controlPlane.health}`}><span /> {controlPlane.health === "online" ? "Control plane online" : controlPlane.health === "checking" ? "Checking local cloud" : "Control plane offline"}</div><button className="icon-button" aria-label="Search projects" onClick={() => { setActiveNav("Projects"); setSelectedId(null); }}><Search size={18} /></button><button className="icon-button" aria-label="Activity" onClick={() => setNotice("Project activity is recorded inside each project workspace.")}><Activity size={18} /></button><div className="top-avatar">D</div></div></header>
         <div className="content">
           {activeNav === "Projects" && selectedProject ? (
             <section className="project-detail">
@@ -185,6 +224,21 @@ export default function App() {
           ) : (
             <section className="engines-view"><div className="eyebrow"><span className="eyebrow-line" /> THE SIMEONY ECOSYSTEM</div><h2 className="page-title">Creation engines</h2><p className="view-intro">A connected toolkit for turning ambitious ideas into real products.</p><div className="engine-grid">{[{icon:<Globe2/>,name:"Web & software",desc:"Frontend, backend, APIs and databases",state:"Foundation available"},{icon:<Box/>,name:"Mobile & desktop",desc:"Cross-platform and native applications",state:"Integration planned"},{icon:<Gamepad2/>,name:"Games & 3D",desc:"Interactive worlds, engines and assets",state:"Integration planned"},{icon:<AudioLines/>,name:"Media & animation",desc:"Creative production and visual storytelling",state:"Integration planned"},{icon:<Bot/>,name:"AI & agents",desc:"Intelligent workflows and task execution",state:"Provider not connected"},{icon:<Workflow/>,name:"Automation",desc:"Connected processes and repeatable tasks",state:"Integration planned"}].map((engine) => <article className="engine-card" key={engine.name}><div className="engine-icon">{engine.icon}</div><b>{engine.name}</b><p>{engine.desc}</p><span>{engine.state}</span></article>)}</div></section>
           )}
+          {(activeNav === "Overview" || activeNav === "AI workspace") && <section className="control-plane-panel">
+            <div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> LOCAL INFRASTRUCTURE</div><h3>Cloud control centre</h3><p>Live status from the computer running your SIMEONY control plane.</p></div><span className={`connection-pill ${controlPlane.health}`}><i />{controlPlane.health === "online" ? "CONNECTED" : controlPlane.health === "checking" ? "CHECKING" : "NOT CONNECTED"}</span></div>
+            {controlPlane.health === "online" && controlPlane.capabilities ? <>
+              <div className="infra-grid">
+                <article><span>HOST PLATFORM</span><b>{controlPlane.capabilities.platform}</b><small>{controlPlane.capabilities.processor}</small></article>
+                <article><span>CPU CORES</span><b>{controlPlane.capabilities.cpu_logical_cores ?? "Not reported"}</b><small>{controlPlane.capabilities.cpu_percent == null ? "Usage unavailable" : `${controlPlane.capabilities.cpu_percent.toFixed(0)}% current usage`}</small></article>
+                <article><span>MEMORY</span><b>{formatBytes(controlPlane.capabilities.memory_available_bytes)} free</b><small>{formatBytes(controlPlane.capabilities.memory_total_bytes)} total</small></article>
+                <article><span>STORAGE</span><b>{formatBytes(controlPlane.capabilities.disk_free_bytes)} free</b><small>{formatBytes(controlPlane.capabilities.disk_total_bytes)} total</small></article>
+              </div>
+              <div className="integration-status-list"><div className="integration-list-heading"><b>Local engine connections</b><span>Checked automatically every 15 seconds</span></div>
+                {controlPlane.integrations.map((item) => <div className="integration-status-row" key={item.id}><span className={`integration-dot ${item.state}`} /><b>{item.name}</b><span>{item.state === "available" ? "Available" : "Unavailable"}</span><small>{item.detail}</small></div>)}
+              </div>
+              <p className="gpu-honesty"><ShieldCheck size={14} /> {controlPlane.capabilities.gpu.message}</p>
+            </> : <div className="control-plane-empty"><Cpu size={22} /><b>{controlPlane.health === "checking" ? "Checking your local control plane…" : "Your local control plane is not running"}</b><span>{controlPlane.error ?? "Start the backend to see real host resources and connected engines here."}</span><code>powershell -ExecutionPolicy Bypass -File .\\scripts\\start-control-plane.ps1</code></div>}
+          </section>}
           <section className="bottom-strip"><div className="bottom-icon"><ShieldCheck size={17} /></div><div><b>Your workspace, your rules.</b><span>No deployment, paid service or external AI provider is activated by this change.</span></div><span className="foundation-tag"><Check size={12} /> LOCAL WORKSPACE</span></section>
           {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss"><X size={15} /></button></div>}
           <footer><span>© 2026 SIMEONY · SIMEONJR STUDIOS</span><span>BUILD BEYOND IMAGINATION <Sparkles size={12} /></span></footer>
