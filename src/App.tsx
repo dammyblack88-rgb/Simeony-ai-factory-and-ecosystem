@@ -102,7 +102,7 @@ export default function App() {
 
   const formatBytes = (value?: number) => {
     if (value == null || !Number.isFinite(value)) return "Not reported";
-    const units = ["B", "KB", "GB", "TB"];
+    const units = ["B", "KB", "MB", "GB", "TB"];
     let amount = value;
     let unit = 0;
     while (amount >= 1024 && unit < units.length - 1) { amount /= 1024; unit++; }
