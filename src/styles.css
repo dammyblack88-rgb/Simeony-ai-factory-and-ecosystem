@@ -55,3 +55,43 @@
 .project-quick-card{text-align:left;color:#f3f4f8}
 @media(max-width:850px){.detail-grid{grid-template-columns:1fr}.detail-side{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.detail-heading{align-items:flex-start;flex-direction:column}.detail-side{grid-template-columns:1fr}.detail-meta>span{font-size:8px}.add-task-form{flex-wrap:wrap}.add-task-form input{flex-basis:100%;min-height:38px}.add-task-form button{min-height:35px}.project-row-button .project-updated{display:block}}
+
+/* Live local cloud control centre */
+.system-status.online span{background:#65d69a;box-shadow:0 0 8px #65d69a88}
+.system-status.offline span{background:#e3a45d;box-shadow:0 0 8px #e3a45d66}
+.system-status.checking span{background:#9b8bdb;box-shadow:0 0 8px #9b8bdb66}
+.control-plane-panel{margin-top:30px;padding:21px;background:linear-gradient(145deg,#121724,#10131d);border:1px solid #34364a;border-radius:13px}
+.control-plane-panel .section-heading{align-items:center;margin-bottom:17px}
+.control-plane-panel .section-heading h3{font:700 15px Manrope;margin:8px 0 5px}
+.connection-pill{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:30px;padding:7px 10px;font-size:8px;letter-spacing:.8px;white-space:nowrap}
+.connection-pill i{width:6px;height:6px;border-radius:50%;background:#85899b}
+.connection-pill.online{color:#91d6ad;border-color:#315b46;background:#17281f}
+.connection-pill.online i{background:#72d69c}
+.connection-pill.offline{color:#e4b27c;border-color:#5b4630;background:#2a2118}
+.connection-pill.offline i{background:#e4b27c}
+.connection-pill.checking{color:#bcb0ed}
+.connection-pill.checking i{background:#bcb0ed}
+.infra-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.infra-grid article{min-width:0;background:#0c1019;border:1px solid var(--line);border-radius:8px;padding:12px}
+.infra-grid article>span,.infra-grid article>b,.infra-grid article>small{display:block}
+.infra-grid article>span{font-size:8px;color:#777d91;letter-spacing:1px;margin-bottom:9px}
+.infra-grid article>b{font-size:12px;color:#e5e5ee;overflow-wrap:anywhere}
+.infra-grid article>small{font-size:9px;color:#85899b;margin-top:5px;line-height:1.5;overflow-wrap:anywhere}
+.integration-status-list{margin-top:17px;border-top:1px solid var(--line);padding-top:14px}
+.integration-list-heading{display:flex;justify-content:space-between;gap:12px;margin-bottom:9px}
+.integration-list-heading b{font-size:10px;color:#dcdce7}
+.integration-list-heading span{font-size:8px;color:#777d91}
+.integration-status-row{display:grid;grid-template-columns:8px minmax(80px,1fr) auto minmax(100px,1.3fr);gap:10px;align-items:center;padding:9px 2px;border-top:1px solid #ffffff08}
+.integration-status-row>b{font-size:10px;color:#d6d7e1}
+.integration-status-row>span:nth-of-type(2){font-size:9px;color:#9ca1b1}
+.integration-status-row>small{font-size:9px;color:#777d91;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.integration-dot{width:7px;height:7px;border-radius:50%;background:#777d91}
+.integration-dot.available{background:#72d69c;box-shadow:0 0 7px #72d69c66}
+.integration-dot.unavailable{background:#d6a45e}
+.gpu-honesty{display:flex;align-items:center;gap:7px;margin:13px 0 0;color:#9993b6;font-size:9px;line-height:1.5}
+.control-plane-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:22px 12px;color:#9f91d8;background:#0c1019;border:1px dashed #373149;border-radius:9px}
+.control-plane-empty b{font-size:11px;color:#e3e0ee}
+.control-plane-empty>span{font-size:10px;color:#85899b;max-width:450px;line-height:1.6}
+.control-plane-empty code{font-size:9px;color:#c7baff;background:#201b31;border-radius:6px;padding:8px 10px;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:850px){.infra-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.control-plane-panel{padding:15px}.control-plane-panel .section-heading{align-items:flex-start;flex-direction:column}.integration-list-heading{flex-direction:column;gap:4px}.integration-status-row{grid-template-columns:8px 1fr auto}.integration-status-row>small{grid-column:2 / -1;white-space:normal}.infra-grid article>b{font-size:10px}}
