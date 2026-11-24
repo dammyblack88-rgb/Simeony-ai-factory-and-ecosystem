@@ -32,7 +32,7 @@ export type ControlPlaneSnapshot = {
   error?: string;
 };
 
-const API_BASE = (import.meta.env.VITE_CONTROL_PLANE_URL ?? "").replace(/\/$/, "");
+const API_BASE = "";
 
 async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
