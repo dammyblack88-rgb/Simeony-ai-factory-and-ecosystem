@@ -6,9 +6,9 @@ type Key = { frame: number; x: number; y: number; rotation: number; scale: numbe
 type Layer = { id: string; name: string; kind: "rect" | "circle" | "text"; color: string; text?: string; keys: Key[] };
 const STORE = "simeony.animation-studio.v1";
 const initial: Layer[] = [
-  { id: "layer-1", name: "Main title", kind: "text", color: "#f2edff", text: "A NEW STORY", keys: [{ frame: 1, x: 210, y: 145, rotation: 0, scale: 1 }, { frame: 48, x: 210, y: 145, rotation: 0, scale: 1 }] },
+  { id: "layer-3", name: "Backdrop", kind: "rect", color: "#282044", keys: [{ frame: 1, x: 210, y: 260, rotation: 0, scale: 1 }, { frame: 48, x: 210, y: 260, rotation: 0, scale: 1 }] },
   { id: "layer-2", name: "Orbit", kind: "circle", color: "#a78bfa", keys: [{ frame: 1, x: 170, y: 260, rotation: 0, scale: .75 }, { frame: 48, x: 430, y: 260, rotation: 0, scale: 1.15 }] },
-  { id: "layer-3", name: "Backdrop", kind: "rect", color: "#282044", keys: [{ frame: 1, x: 210, y: 260, rotation: 0, scale: 1 }, { frame: 48, x: 210, y: 260, rotation: 0, scale: 1 }] }
+  { id: "layer-1", name: "Main title", kind: "text", color: "#f2edff", text: "A NEW STORY", keys: [{ frame: 1, x: 210, y: 145, rotation: 0, scale: 1 }, { frame: 48, x: 210, y: 145, rotation: 0, scale: 1 }] }
 ];
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 function atFrame(layer: Layer, frame: number): Key {
@@ -64,7 +64,7 @@ export default function AnimationStudio() {
   }
   function exportSvg() {
     const shapes = layers.map(l => {
-      const k = atFrame(l, frame); const transform = `translate(${k.x} ${k.y}) rotate(${k.rotation}) scale(${k.scale})`;
+      const k = atFrame(l, frame); const transform = `translate(${k.x*2} ${k.y*2-260}) rotate(${k.rotation}) scale(${k.scale})`;
       if (l.kind === "circle") return `<circle cx="0" cy="0" r="54" fill="${l.color}" transform="${transform}"/>`;
       if (l.kind === "text") return `<text x="0" y="0" fill="${l.color}" font-family="Arial,sans-serif" font-size="30" font-weight="700" text-anchor="middle" dominant-baseline="middle" transform="${transform}">${(l.text ?? "Text").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c] ?? c))}</text>`;
       return `<rect x="-78" y="-48" width="156" height="96" rx="18" fill="${l.color}" transform="${transform}"/>`;
