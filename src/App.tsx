@@ -150,7 +150,7 @@ export default function App() {
         <div className="toolkit-item"><Code2 size={16} /><span>Web & software</span><span className="toolkit-dot ready" /></div>
         <div className="toolkit-item"><Box size={16} /><span>Mobile apps</span><span className="toolkit-dot" /></div>
         <div className="toolkit-item"><Gamepad2 size={16} /><span>Games & 3D</span><span className="toolkit-dot" /></div>
-        <div className="toolkit-item"><AudioLines size={16} /><span>Media & animation</span><span className="toolkit-dot" /></div>
+        <button className="toolkit-item animation-launcher" onClick={() => { window.location.href = "/animation"; }}><AudioLines size={16} /><span>Media & animation</span><span className="toolkit-dot ready" /></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><CircleHelp size={17} /></div><b>Need a hand?</b><p>Your workspace now saves projects, tasks and activity in this browser.</p><button onClick={() => setNotice("AI generation and cloud collaboration are not connected yet.")}>What's connected <ArrowUpRight size={13} /></button></div>
           <button className="nav-item settings-link" onClick={() => setNotice("Workspace settings and accounts are planned for a later milestone.")}><Settings2 size={17} /><span>Settings</span></button>
