@@ -55,3 +55,6 @@
 .project-quick-card{text-align:left;color:#f3f4f8}
 @media(max-width:850px){.detail-grid{grid-template-columns:1fr}.detail-side{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.detail-heading{align-items:flex-start;flex-direction:column}.detail-side{grid-template-columns:1fr}.detail-meta>span{font-size:8px}.add-task-form{flex-wrap:wrap}.add-task-form input{flex-basis:100%;min-height:38px}.add-task-form button{min-height:35px}.project-row-button .project-updated{display:block}}
+
+.toolkit-item.animation-launcher{width:100%;border:0;text-align:left;font:inherit;cursor:pointer;background:transparent}
+.toolkit-item.animation-launcher:hover{background:#211c35;color:#d4c7ff}
