@@ -4,7 +4,7 @@ import App from "./App";
 import AnimationStudio from "./animation/AnimationStudio";
 import "./styles.css";
 
-const isAnimationStudio = window.location.pathname.replace(/\\/+$/, "") === "/animation";
+const isAnimationStudio = window.location.pathname === "/animation" || window.location.pathname === "/animation/";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {isAnimationStudio ? <AnimationStudio /> : <App />}
